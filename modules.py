@@ -21,7 +21,7 @@ class GeneralModel(torch.nn.Module):
             if memory_param['memory_update'] == 'gru':
                 self.memory_updater = GRUMemeoryUpdater(memory_param, 2 * memory_param['dim_out'] + dim_edge, memory_param['dim_out'], memory_param['dim_time'], dim_node)
             elif memory_param['memory_update'] == 'hygru':
-                self.memory_updater = HyperGRUUpdater(memory_param, 2 * memory_param['dim_out'] + dim_edge, memory_param['dim_out'], memory_param['dim_time'], dim_node)
+                self.memory_updater = HypGRU(memory_param, 2 * memory_param['dim_out'] + dim_edge, memory_param['dim_out'], memory_param['dim_time'], dim_node)
             else:
                 raise NotImplementedError
             self.dim_node_input = memory_param['dim_out']
