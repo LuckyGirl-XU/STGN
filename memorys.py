@@ -188,7 +188,6 @@ class HyperGRUUpdater(torch.nn.Module):
                 self.node_feat_map = torch.nn.Linear(dim_node_feat, dim_hid)
 
     def forward(self, mfg):
-        #print('memory')
         for b in mfg:
             if self.dim_time > 0:
                 time_feat = self.time_enc(b.srcdata['ts'] - b.srcdata['mem_ts'])
@@ -198,13 +197,6 @@ class HyperGRUUpdater(torch.nn.Module):
             #print('mem_input', b.srcdata['mem_input'].shape)
             b.srcdata['mem'] = self.manifold.proj_tan0(self.manifold.logmap0(b.srcdata['mem'], c=self.c), c=self.c)
             updated_memory = self.updater(b.srcdata['mem_input'], b.srcdata['mem'])
-            #print('updated_memory',updated_memory.shape)
-            #print("self.dim_time", self.dim_time)
-            #print("b.srcdata['mem']", b.srcdata['mem'].shape)
-            #print("self.dim_node_feat", self.dim_node_feat)
-            #print("self.dim_in", self.dim_in)
-            #print("dim_time", self.dim_time)
-            #exit()
             updated_memory = self.manifold.proj(self.manifold.expmap0(updated_memory, self.c), self.c)
             self.last_updated_ts = b.srcdata['ts'].detach().clone()
             self.last_updated_memory = updated_memory.detach().clone()
