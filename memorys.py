@@ -170,13 +170,14 @@ class HyperGRUUpdater(torch.nn.Module):
 
     def __init__(self, memory_param, dim_in, dim_hid, dim_time, dim_node_feat):
         super(HyperGRUUpdater, self).__init__()
-        self.c = torch.tensor(memory_param['c1'])
-        self.manifold =  getattr(manifolds, memory_param['Mani'])()
+        self.c = memory_param['c1']
+        self.manifold = getattr(manifolds, memory_param['Mani'])()
         self.dim_hid = dim_hid
+        self.dim_in= dim_in
         self.dim_node_feat = dim_node_feat
         self.memory_param = memory_param
         self.dim_time = dim_time
-        self.updater = MobiusGRU(dim_in + dim_time, dim_hid, 1, self.c).to('cuda')
+        self.updater = torch.nn.GRUCell(dim_in + dim_time, dim_hid)
         self.last_updated_memory = None
         self.last_updated_ts = None
         self.last_updated_nid = None
@@ -185,23 +186,26 @@ class HyperGRUUpdater(torch.nn.Module):
         if memory_param['combine_node_feature']:
             if dim_node_feat > 0 and dim_node_feat != dim_hid:
                 self.node_feat_map = torch.nn.Linear(dim_node_feat, dim_hid)
-    def Hyp_Encoder(self, x):
-        x_tan = self.manifold.proj_tan0(x, self.c)
-        x_hyp = self.manifold.expmap0(x_tan, self.c)
-        x_hyp = self.manifold.proj(x_hyp, self.c)
-        return x_hyp
-    
-    def Hyp_Decoder(self, x):
-        h = self.manifold.proj_tan0(pmath.logmap0(x, self.c), self.c)
-        return h
-    
+
     def forward(self, mfg):
+        #print('memory')
         for b in mfg:
             if self.dim_time > 0:
                 time_feat = self.time_enc(b.srcdata['ts'] - b.srcdata['mem_ts'])
-                time_feat = self.Hyp_Encoder(time_feat)
+                time_feat = self.manifold.proj(self.manifold.expmap0(time_feat, self.c), self.c)
                 b.srcdata['mem_input'] = torch.cat([b.srcdata['mem_input'], time_feat], dim=1)
-            updated_memory = self.updater(b.srcdata['mem_input'], b.srcdata['mem'])[0]
+            b.srcdata['mem_input'] = self.manifold.proj_tan0(self.manifold.logmap0(b.srcdata['mem_input'], c=self.c), self.c)
+            #print('mem_input', b.srcdata['mem_input'].shape)
+            b.srcdata['mem'] = self.manifold.proj_tan0(self.manifold.logmap0(b.srcdata['mem'], c=self.c), c=self.c)
+            updated_memory = self.updater(b.srcdata['mem_input'], b.srcdata['mem'])
+            #print('updated_memory',updated_memory.shape)
+            #print("self.dim_time", self.dim_time)
+            #print("b.srcdata['mem']", b.srcdata['mem'].shape)
+            #print("self.dim_node_feat", self.dim_node_feat)
+            #print("self.dim_in", self.dim_in)
+            #print("dim_time", self.dim_time)
+            #exit()
+            updated_memory = self.manifold.proj(self.manifold.expmap0(updated_memory, self.c), self.c)
             self.last_updated_ts = b.srcdata['ts'].detach().clone()
             self.last_updated_memory = updated_memory.detach().clone()
             self.last_updated_nid = b.srcdata['ID'].detach().clone()
@@ -210,9 +214,9 @@ class HyperGRUUpdater(torch.nn.Module):
                     if self.dim_node_feat == self.dim_hid:
                         b.srcdata['h'] += updated_memory
                     else:
-                        b.srcdata['h'] = pmath.mobius_add(updated_memory, self.node_feat_map(b.srcdata['h']), self.c)
+                        b.srcdata['h'] = updated_memory + self.node_feat_map(b.srcdata['h'])
                 else:
-                    b.srcdata['h'] = updated_memory            
+                    b.srcdata['h'] = updated_memory          
 
 
 class GRUMemeoryUpdater(torch.nn.Module):
