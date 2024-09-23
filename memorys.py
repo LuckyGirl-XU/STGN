@@ -5,7 +5,7 @@ from torch_scatter import scatter
 import manifolds
 import math
 import itertools
-from nets import MobiusGRU
+# from nets import MobiusGRU
 import geoopt.manifolds.stereographic.math as pmath
 
 class MailBox():
