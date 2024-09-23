@@ -16,8 +16,8 @@ memory:
     mailbox_size: 1
     combine_node_feature: True
     dim_out: 100
-    Mani: 'Hyperboloid' 
-    c1: 0.01
+    c1: 0.000000001
+    Mani: 'PoincareBall'
     bias: True
 train:
   - epoch: 100
@@ -37,9 +37,8 @@ gnn:
     att_head: 2
     dim_time: 100
     dim_out: 100
-    #combine: 'rnn'
-    manifold: 'Hyperboloid' 
-    c: 0.01
+    manifold: 'PoincareBall' #'PoincareBall' #'Hyperboloid' #
+    c: 0.000000001
     num_layers: 1
     bias: 1
     act: 'LeakyReLU'
