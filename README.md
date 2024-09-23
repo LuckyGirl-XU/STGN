@@ -2,6 +2,10 @@
 
 This repo is for Scalable and Effective Temporal Graph Representation Learning With Hyperbolic Geometry, published at IEEE Transactions on Neural Networks and Learning Systems (TNNLS) 2024.
 
+# Run
+
+> python train.py --data 'WIKI' --gpu 1 --config ./config/STGN.yml
+
 # Acknowledgement
 
 Our source code and data processing are built heavily based on the code of the TGL Framework at [URL](https://github.com/amazon-science/tgl).
